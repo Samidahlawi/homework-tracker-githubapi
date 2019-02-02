@@ -4,4 +4,4 @@ Make sure you enable Allow-Control-Allow-Origin chrome [Extensions](https://chro
 
 # Reuse the template
 
-If you want to reuse the template just updat the data.js file
+If you want to reuse the template just update the data.js file
