@@ -8,15 +8,12 @@ $(document).ready(() => {
 
   // fetch
   const sendReminder = (user, repo) => {
-    console.log(user, repo);
-
     let msg =
       "hey :wave:, this is an auto generated reminder about your hw " +
       "`" +
       `${repo.slice(repo.indexOf("/") + 1)}` +
       "`" +
       ` \nhttps://github.com/${repo}`;
-    console.log(msg);
 
     // comments this line, this is just for testing
     user.slack = "UDVTZMFHT"; // Ghadeer id
@@ -32,13 +29,14 @@ $(document).ready(() => {
       })
       .catch(error => console.log(error));
   };
+
   const fetchHwRepos = () => {
     const query = `${hwPattern}+fork:true+user:${mainRepo}&sort=updated&order=asc`;
     const url = `${githubApi}/search/repositories?q=${query}${secret}`;
     fetch(url)
       .then(response => response.json())
       .then(repos => {
-        filterRepos(repos);
+        renderRepoList(repos);
       })
       .catch(error => console.log(error));
   };
@@ -113,7 +111,7 @@ $(document).ready(() => {
             rank =
               index == 0 ? "st" : index == 1 ? "nd" : index == 1 ? "rd" : "th";
             hwPot =
-              `You won the ${index + 1 + rank}  place ${pull.user.login} ` +
+              `${index + 1 + rank}  place ${pull.user.login} ` +
               "⭐️".repeat(5 - index);
 
             updateLeaderboard(pull.user.login, "⭐️ ".repeat(5 - index));
@@ -141,7 +139,6 @@ $(document).ready(() => {
         }
       });
 
-      console.log(leaderboard);
       checkMissingSubmission(
         submittedStudents,
         $tbody,
@@ -150,21 +147,38 @@ $(document).ready(() => {
     }
   };
 
+  const renderRepoList = repos => {
+    const $repoList = $("<div>").attr("class", "p-5 mt-5");
+
+    $("<h1> click on a Repo </h1>").appendTo($repoList);
+
+    repos.items.forEach(repo => {
+      if (!repo.name.includes("W01D01")) {
+        let $h2 = $("<h2>");
+        $h2
+          .attr("class", "text-center container bg-light p-5 mt-5")
+          // .attr("id", repo.id)
+          .text(repo.name)
+          .appendTo($repoList)
+          .click(e => renderRepo(repo));
+
+        $("<div>")
+          .attr("id", `repo${repo.id}`)
+          .appendTo($repoList);
+      }
+    });
+    $repoList.appendTo("#repos");
+  };
+
   const renderRepo = repo => {
-    // console.log(repo.name);
-    if (!repo.name.includes("W01D01")) {
-      const $repo = $("<div>").attr("class", "container bg-light p-5 mt-5");
+    const $repo = $(`#repo${repo.id}`);
 
-      $("<h2>")
-        .attr("class", "text-center")
-        .text(repo.name)
-        .appendTo($repo);
-      $("<h3>")
-        .attr("class", "text-center")
-        .text(new Date(repo.created_at).toGMTString())
-        .appendTo($repo);
+    $("<h3>")
+      .attr("class", "text-center")
+      .text(new Date(repo.created_at).toGMTString())
+      .appendTo($repo);
 
-      $(`
+    $(`
       <table class='table table-hover table-sm table-responsive-sm' style="width: 100% !important;">
         <thead>
           <tr>
@@ -179,25 +193,15 @@ $(document).ready(() => {
         <tbody id=${repo.id}>
         </tbody>
       </table>`).appendTo($repo);
-      $repo.appendTo("#result");
-    }
-  };
 
-  // helper functions
-  const filterRepos = repos => {
-    repos.items.forEach(repo => {
-      renderRepo(repo);
-      fetchPulls(
-        `https://api.github.com/repos/${
-          repo.full_name
-        }/pulls?state=all&sort=created&direction=asc${secret}`
-      );
-    });
+    fetchPulls(
+      `https://api.github.com/repos/${
+        repo.full_name
+      }/pulls?state=all&sort=created&direction=asc${secret}`
+    );
   };
 
   const checkMissingSubmission = (submittedStudents, $tbody, repo) => {
-    console.log(repo, `https://github.com/${repo}`);
-
     const missingSubmission = students.filter(
       value => -1 === submittedStudents.indexOf(value.github)
     );
