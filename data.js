@@ -149,3 +149,6 @@ const students = [
     slack: "UDSNLU7A9"
   }
 ];
+
+// send a message as a user
+// https://slack.com/api/chat.postMessage?token=xoxp-342357829824-471951729605-491569941904-c807207db45425de1d8ad79915856c46&channel=UDVTZMFHT&text=Reminder&as_user=true&pretty=1
