@@ -2,6 +2,7 @@ $(document).ready(() => {
   $("#logo").attr("src", logo);
   let toggleLeaderboard = false;
   let leaderboard = [];
+  let activeRepo;
   let toggleMissingHw = false;
   const missingHw = [];
   const secret = `&client_id=${clientId}&client_secret=${clientSecret}`;
@@ -148,16 +149,15 @@ $(document).ready(() => {
   };
 
   const renderRepoList = repos => {
-    const $repoList = $("<div>").attr("class", "p-5 mt-5");
+    const $repoList = $("<div>").attr("class", "container p-5 mt-5");
 
-    $("<h1> click on a Repo </h1>").appendTo($repoList);
+    $("<h1> Click on a Repo </h1>").appendTo($repoList);
 
     repos.items.forEach(repo => {
       if (!repo.name.includes("W01D01")) {
         let $h2 = $("<h2>");
         $h2
-          .attr("class", "text-center container bg-light p-5 mt-5")
-          // .attr("id", repo.id)
+          .attr("class", "text-center bg-light p-5 mt-5")
           .text(repo.name)
           .appendTo($repoList)
           .click(e => renderRepo(repo));
@@ -173,32 +173,36 @@ $(document).ready(() => {
   const renderRepo = repo => {
     const $repo = $(`#repo${repo.id}`);
 
-    $("<h3>")
-      .attr("class", "text-center")
-      .text(new Date(repo.created_at).toGMTString())
-      .appendTo($repo);
+    if ($repo.is(":empty")) {
+      $("<h3>")
+        .attr("class", "text-center")
+        .text(new Date(repo.created_at).toGMTString())
+        .appendTo($repo);
 
-    $(`
-      <table class='table table-hover table-sm table-responsive-sm' style="width: 100% !important;">
-        <thead>
-          <tr>
-            <th></th>
-            <th>UserName</th>
-            <th>Submission Date</th>
-            <th>Complete Date</th>
-            <th>Comments</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id=${repo.id}>
-        </tbody>
-      </table>`).appendTo($repo);
+      $(`
+        <table class='table table-hover table-sm table-responsive-sm' style="width: 100% !important;">
+          <thead>
+            <tr>
+              <th></th>
+              <th>UserName</th>
+              <th>Submission Date</th>
+              <th>Complete Date</th>
+              <th>Comments</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id=${repo.id}>
+          </tbody>
+        </table>`).appendTo($repo);
 
-    fetchPulls(
-      `https://api.github.com/repos/${
-        repo.full_name
-      }/pulls?state=all&sort=created&direction=asc${secret}`
-    );
+      fetchPulls(
+        `https://api.github.com/repos/${
+          repo.full_name
+        }/pulls?state=all&sort=created&direction=asc${secret}`
+      );
+    } else {
+      $repo.empty();
+    }
   };
 
   const checkMissingSubmission = (submittedStudents, $tbody, repo) => {
