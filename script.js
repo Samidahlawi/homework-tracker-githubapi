@@ -1,12 +1,40 @@
 $(document).ready(() => {
   $("#logo").attr("src", logo);
-  let toggle = false;
+  let toggleLeaderboard = false;
   let leaderboard = [];
+  let toggleMissingHw = false;
+  const missingHw = [];
   const secret = `&client_id=${clientId}&client_secret=${clientSecret}`;
+
   // fetch
+  const sendReminder = (user, repo) => {
+    console.log(user, repo);
+
+    let msg =
+      "hey :wave:, this is an auto generated reminder about your hw " +
+      "`" +
+      `${repo.slice(repo.indexOf("/") + 1)}` +
+      "`" +
+      ` \nhttps://github.com/${repo}`;
+    console.log(msg);
+
+    // comments this line, this is just for testing
+    user.slack = "UDVTZMFHT"; // Ghadeer id
+
+    fetch(
+      `${slackApi}/chat.postMessage?token=${token}&channel=${
+        user.slack
+      }&text=${msg}&as_user=true&pretty=1`
+    )
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+      })
+      .catch(error => console.log(error));
+  };
   const fetchHwRepos = () => {
     const query = `${hwPattern}+fork:true+user:${mainRepo}&sort=updated&order=asc`;
-    const url = `${apiURL}/search/repositories?q=${query}${secret}`;
+    const url = `${githubApi}/search/repositories?q=${query}${secret}`;
     fetch(url)
       .then(response => response.json())
       .then(repos => {
@@ -35,8 +63,12 @@ $(document).ready(() => {
       if (dueDate.getDay() === 4) {
         dueDate.setDate(dueDate.getDate() + 2);
       }
+
       pulls.forEach((pull, index) => {
-        if (students.indexOf(pull.user.login) > -1) {
+        const i = students
+          .map(student => student.github)
+          .indexOf(pull.user.login);
+        if (i > -1) {
           const $tr = $("<tr>");
           let hwPot = null;
           $("<th>")
@@ -55,7 +87,7 @@ $(document).ready(() => {
               `
           <a href="https://github.com/${pull.base.repo.full_name}/pull/${
                 pull.number
-              }?${secret}"> ${pull.user.login} </a>`
+              }?${secret}"> ${students[i].name} </a>`
             )
             .css({ "max-width": "55px" })
             .appendTo($tr);
@@ -110,7 +142,11 @@ $(document).ready(() => {
       });
 
       console.log(leaderboard);
-      checkMissingSubmission(submittedStudents, $tbody);
+      checkMissingSubmission(
+        submittedStudents,
+        $tbody,
+        pulls[0].base.repo.full_name
+      );
     }
   };
 
@@ -159,10 +195,23 @@ $(document).ready(() => {
     });
   };
 
-  const checkMissingSubmission = (submittedStudents, $tbody) => {
+  const checkMissingSubmission = (submittedStudents, $tbody, repo) => {
+    console.log(repo, `https://github.com/${repo}`);
+
     const missingSubmission = students.filter(
-      value => -1 === submittedStudents.indexOf(value)
+      value => -1 === submittedStudents.indexOf(value.github)
     );
+
+    // TO DO: RENDER ALL THE MISSING HW
+    // if (missingSubmission.length > 0)
+    //   missingHw.push({
+    //     repo: {
+    //       name: repo,
+    //       link: `https://github.com/${repo}`,
+    //       students: missingSubmission
+    //     }
+    //   });
+    // console.log(missingHw);
 
     if (missingSubmission.length > 0) {
       missingSubmission.forEach(student => {
@@ -179,7 +228,9 @@ $(document).ready(() => {
 
         $("<th>")
           .html(
-            `<a href="https://github.com/${student}" target="_blank"> ${student} </a>`
+            `<a href="https://github.com/${student.github}" target="_blank"> ${
+              student.name
+            } </a>`
           )
           .css({ "max-width": "55px" })
           .appendTo($tr);
@@ -198,7 +249,8 @@ $(document).ready(() => {
           .css({ "max-width": "200px" })
           .appendTo($tr);
         $("<th>")
-          .html("") // TODO : send reminder through slack api ?
+          .html(`<button class="btn btn-primary"> send Reminder </button>`)
+          .click(() => sendReminder(student, repo))
           .css({ "max-width": "55px" })
           .appendTo($tr);
 
@@ -241,9 +293,15 @@ $(document).ready(() => {
     );
   };
 
-  $("button").click(() => {
-    toggle = !toggle;
-    toggle ? renderLeaderboard() : $("#leaderboard").empty();
+  // TO DO: RENDER ALL THE MISSING HW
+  // $("#MissingHwBtn").click(() => {
+  //   toggleMissingHw = !toggleMissingHw;
+  //   toggleMissingHw ? renderMissingHw() : $("#missingHw").empty();
+  // });
+
+  $("#leaderboardBtn").click(() => {
+    toggleLeaderboard = !toggleLeaderboard;
+    toggleLeaderboard ? renderLeaderboard() : $("#leaderboard").empty();
   });
   fetchHwRepos();
 });
